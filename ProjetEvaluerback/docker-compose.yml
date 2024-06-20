@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - MONGO_DB=mongodb://mongo:27017/testdb
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:4.4
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  test:
+    build: .
+    command: npm test
+    environment:
+      - MONGO_JEST=mongodb://mongo:27017/testdb
+    depends_on:
+      - mongo
+
+volumes:
+  mongo-data:
