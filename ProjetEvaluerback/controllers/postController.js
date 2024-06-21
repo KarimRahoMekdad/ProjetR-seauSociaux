@@ -71,24 +71,40 @@ exports.likePost = async (req, res) => {
   }
 };
 
-// exports.deletePost = async (req, res) => {
-//   try {
-//     const postId = req.params.postId;
-//     const userId = req.auth.userId;
+exports.updatePost = async (req, res) => {
+  try {
+    const postId = req.params.postId;
+    const userId = req.auth.userId;
 
-//     const post = await Post.findOne()
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
 
-//     if (!post) {
-//       return res.status(404).json({ error: 'Post not found or you are not authorized to delete it' });
-//     }
+    const post = await Post.findOne({ _id: postId, userId: userId });
 
-//     await post.remove();
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found or you are not authorized to update it' });
+    }
 
-//     res.status(200).json({ message: 'Post deleted successfully' });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// };
+    const { title, content } = req.body;
+    let imageUrl = post.imageUrl; 
+
+    if (req.file) {
+      imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
+    }
+
+    post.title = title || post.title;
+    post.content = content || post.content;
+    post.imageUrl = imageUrl;
+
+    await post.save();
+
+    res.status(200).json({ message: 'Post updated successfully', post });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
 
 exports.deletePost = async (req, res) => {
   try {

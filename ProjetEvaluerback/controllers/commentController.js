@@ -1,5 +1,6 @@
 const Comment = require('../models/Comment');
-const Post = require('../models/Post')
+const Post = require('../models/Post');
+const mongoose = require('mongoose');
 
 exports.createComment = async (req, res) => {
   try {
@@ -39,6 +40,40 @@ exports.getCommentsByUser = async (req, res) => {
       res.status(500).json({ error: error.message });
     }
   };
+
+  exports.updateComment = async (req, res) => {
+    try {
+      const commentId = req.params.id;
+      const userId = req.auth.userId;
+  
+      if (!mongoose.Types.ObjectId.isValid(commentId)) {
+        return res.status(400).json({ error: 'Invalid comment ID' });
+      }
+  
+      const comment = await Comment.findOne({ _id: commentId, userId: userId });
+  
+      if (!comment) {
+        return res.status(404).json({ error: 'Comment not found or you are not authorized to update it' });
+      }
+  
+      const { content } = req.body;
+      let imageUrl = comment.imageUrl;
+  
+      if (req.file) {
+        imageUrl = `${req.protocol}://${req.get('host')}/images/${req.file.filename}`;
+      }
+  
+      comment.content = content || comment.content;
+      comment.imageUrl = imageUrl;
+  
+      await comment.save();
+  
+      res.status(200).json({ message: 'Comment updated successfully', comment });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  };
+  
 
 exports.deleteComment = async (req, res) => {
     try {
